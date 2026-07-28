@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Markets | AI Trader</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="app-shell" id="app-shell">
+    <div id="page-content">
+      <div class="animate-in" style="margin-bottom:24px;">
+        <h1 style="margin:0 0 4px;">Markets</h1>
+        <p style="color:var(--text-1);margin:0;">Live prices streamed directly from Binance.</p>
+      </div>
+      <div class="glass card animate-in">
+        <div id="tickers-table"><div class="empty-state">Loading market data...</div></div>
+      </div>
+    </div>
+  </div>
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/layout.js"></script>
+  <script>
+    let latest = {};
+
+    function render() {
+      const rows = Object.values(latest);
+      if (!rows.length) return;
+      const table = document.getElementById('tickers-table');
+      table.innerHTML = `<table><thead><tr><th>Symbol</th><th>Price</th><th>24h Change</th><th>24h Volume</th></tr></thead><tbody>
+        ${rows.map(t => `<tr>
+          <td><strong>${t.symbol}</strong></td>
+          <td>$${Number(t.price).toLocaleString(undefined,{maximumFractionDigits:6})}</td>
+          <td class="${Number(t.change) >= 0 ? 'pos' : 'neg'}">${Number(t.change) >= 0 ? '+' : ''}${Number(t.change).toFixed(2)}%</td>
+          <td>${Number(t.volume).toLocaleString(undefined,{maximumFractionDigits:2})}</td>
+        </tr>`).join('')}
+      </tbody></table>`;
+    }
+
+    async function loadInitial() {
+      try {
+        const d = await Api.get('/api/markets/tickers');
+        d.tickers.forEach(t => {
+          latest[t.symbol] = { symbol: t.symbol, price: t.lastPrice, change: t.priceChangePercent, volume: t.quoteVolume };
+        });
+        render();
+      } catch (e) {
+        document.getElementById('tickers-table').innerHTML = `<div class="empty-state">Could not load market data: ${e.message}</div>`;
+      }
+    }
+    loadInitial();
+
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    const ws = new WebSocket(`${proto}://${location.host}/ws`);
+    ws.onmessage = (ev) => {
+      try {
+        const msg = JSON.parse(ev.data);
+        if (msg.type === 'ticker') {
+          latest[msg.symbol] = { symbol: msg.symbol, price: msg.price, change: msg.change, volume: msg.volume };
+          render();
+        }
+      } catch (e) {}
+    };
+  </script>
+</body>
+</html>

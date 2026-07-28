@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard | AI Trader</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="app-shell" id="app-shell">
+    <div id="page-content">
+      <div class="animate-in" style="margin-bottom:24px;">
+        <h1 style="margin:0 0 4px;">Dashboard</h1>
+        <p style="color:var(--text-1);margin:0;">Live overview of your account, bot status, and open trades.</p>
+      </div>
+
+      <div id="no-account-banner" class="glass card animate-in" style="display:none;margin-bottom:20px;">
+        <strong>No Binance account connected yet.</strong>
+        <p style="color:var(--text-1);margin:8px 0 12px;">Connect a Spot or Futures account (Testnet or Real) to start syncing balances and enable AI trading.</p>
+        <a href="/settings.html" class="btn btn-primary btn-sm">Connect Binance Account</a>
+      </div>
+
+      <div class="stat-grid animate-in" style="margin-bottom:20px;">
+        <div class="glass stat-card">
+          <div class="stat-label">Bot Status</div>
+          <div class="stat-value" id="bot-status"><span class="dot dot-green pulse"></span> Running</div>
+        </div>
+        <div class="glass stat-card">
+          <div class="stat-label">Total Trades</div>
+          <div class="stat-value" id="total-trades">0</div>
+        </div>
+        <div class="glass stat-card">
+          <div class="stat-label">Win Rate</div>
+          <div class="stat-value" id="win-rate">0%</div>
+        </div>
+        <div class="glass stat-card">
+          <div class="stat-label">ROI</div>
+          <div class="stat-value" id="roi">0%</div>
+        </div>
+      </div>
+
+      <div class="grid-2 animate-in" style="margin-bottom:20px;">
+        <div class="glass card">
+          <h3 style="margin-top:0;">Profit &amp; Loss</h3>
+          <div class="stat-grid">
+            <div>
+              <div class="stat-label">Total Profit</div>
+              <div class="stat-value pos" id="total-profit">$0.00</div>
+            </div>
+            <div>
+              <div class="stat-label">Total Loss</div>
+              <div class="stat-value neg" id="total-loss">$0.00</div>
+            </div>
+            <div>
+              <div class="stat-label">Today</div>
+              <div class="stat-value" id="today-profit">$0.00</div>
+            </div>
+            <div>
+              <div class="stat-label">This Week</div>
+              <div class="stat-value" id="weekly-profit">$0.00</div>
+            </div>
+            <div>
+              <div class="stat-label">This Month</div>
+              <div class="stat-value" id="monthly-profit">$0.00</div>
+            </div>
+            <div>
+              <div class="stat-label">Loss Rate</div>
+              <div class="stat-value" id="loss-rate">0%</div>
+            </div>
+          </div>
+        </div>
+        <div class="glass card">
+          <h3 style="margin-top:0;">System Status</h3>
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-1);">Server</span><span class="badge badge-green"><span class="dot dot-green"></span> Online</span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-1);">AI Engine</span><span class="badge badge-green" id="ai-status-badge"><span class="dot dot-green"></span> Enabled</span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-1);">Binance Accounts</span><span id="account-count">0 connected</span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-1);">Open Positions</span><span id="open-positions-count">0</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass card animate-in" style="margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <h3 style="margin:0;">Open Positions</h3>
+          <a href="/manual-trading.html" class="btn btn-secondary btn-sm">Manage</a>
+        </div>
+        <div id="positions-table"><div class="empty-state">No open positions right now.</div></div>
+      </div>
+
+      <div class="glass card animate-in">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <h3 style="margin:0;">Latest AI Signals</h3>
+          <a href="/signals.html" class="btn btn-secondary btn-sm">View All</a>
+        </div>
+        <div id="signals-table"><div class="empty-state">No signals yet - the engine scans every few seconds.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/layout.js"></script>
+  <script>
+    function fmtMoney(n) { return `$${Number(n || 0).toFixed(2)}`; }
+    function pnlClass(n) { return Number(n) >= 0 ? 'pos' : 'neg'; }
+
+    async function loadDashboard() {
+      try {
+        const d = await Api.get('/api/dashboard/summary');
+        document.getElementById('total-trades').textContent = d.totalTrades;
+        document.getElementById('win-rate').textContent = `${d.winRate.toFixed(1)}%`;
+        document.getElementById('loss-rate').textContent = `${d.lossRate.toFixed(1)}%`;
+        document.getElementById('roi').textContent = `${d.roi.toFixed(1)}%`;
+        document.getElementById('total-profit').textContent = fmtMoney(d.totalProfit);
+        document.getElementById('total-loss').textContent = fmtMoney(d.totalLoss);
+        document.getElementById('today-profit').textContent = fmtMoney(d.todayProfit);
+        document.getElementById('weekly-profit').textContent = fmtMoney(d.weeklyProfit);
+        document.getElementById('monthly-profit').textContent = fmtMoney(d.monthlyProfit);
+        document.getElementById('account-count').textContent = `${d.accounts.length} connected`;
+        document.getElementById('open-positions-count').textContent = d.openPositions.length;
+        document.getElementById('bot-status').innerHTML = d.botStatus === 'running'
+          ? '<span class="dot dot-green pulse"></span> Running' : '<span class="dot dot-red"></span> Stopped';
+
+        document.getElementById('no-account-banner').style.display = d.accounts.length ? 'none' : 'block';
+
+        const posTable = document.getElementById('positions-table');
+        if (d.openPositions.length) {
+          posTable.innerHTML = `<table><thead><tr><th>Symbol</th><th>Side</th><th>Entry</th><th>Qty</th><th>SL</th><th>TP</th></tr></thead><tbody>
+            ${d.openPositions.map(p => `<tr><td>${p.symbol}</td><td>${p.side === 'long' ? '<span class="badge badge-green">LONG</span>' : '<span class="badge badge-red">SHORT</span>'}</td><td>${p.entry_price ?? '-'}</td><td>${p.quantity ?? '-'}</td><td>${p.stop_loss ?? '-'}</td><td>${p.take_profit ?? '-'}</td></tr>`).join('')}
+          </tbody></table>`;
+        } else {
+          posTable.innerHTML = '<div class="empty-state">No open positions right now.</div>';
+        }
+
+        const sigTable = document.getElementById('signals-table');
+        if (d.latestSignals.length) {
+          sigTable.innerHTML = `<table><thead><tr><th>Symbol</th><th>Direction</th><th>Confidence</th><th>R:R</th><th>Status</th></tr></thead><tbody>
+            ${d.latestSignals.map(s => `<tr><td>${s.symbol}</td><td>${s.direction === 'long' ? '<span class="badge badge-green">LONG</span>' : '<span class="badge badge-red">SHORT</span>'}</td><td>${s.confidence}%</td><td>1:${(s.risk_reward||0).toFixed(2)}</td><td><span class="badge badge-blue">${s.status}</span></td></tr>`).join('')}
+          </tbody></table>`;
+        } else {
+          sigTable.innerHTML = '<div class="empty-state">No signals yet - the engine scans every few seconds.</div>';
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    loadDashboard();
+    setInterval(loadDashboard, 15000);
+
+    // Live updates over WebSocket
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    const ws = new WebSocket(`${proto}://${location.host}/ws`);
+    ws.onmessage = (ev) => {
+      try {
+        const msg = JSON.parse(ev.data);
+        if (msg.type === 'signal' || msg.type === 'ticker') loadDashboard();
+      } catch (e) {}
+    };
+  </script>
+</body>
+</html>

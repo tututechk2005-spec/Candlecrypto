@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Support | AI Trader</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="app-shell" id="app-shell">
+    <div id="page-content">
+      <div class="animate-in" style="margin-bottom:24px;">
+        <h1 style="margin:0 0 4px;">Support</h1>
+        <p style="color:var(--text-1);margin:0;">Open a ticket and our team will respond here.</p>
+      </div>
+
+      <div class="grid-2 animate-in">
+        <div class="glass card">
+          <h3 style="margin-top:0;">New Ticket</h3>
+          <div id="ticket-alert"></div>
+          <form id="ticket-form">
+            <div class="field"><label>Subject</label><input type="text" name="subject" required /></div>
+            <div class="field"><label>Message</label><textarea name="message" rows="5" required></textarea></div>
+            <button class="btn btn-primary btn-block" type="submit">Submit Ticket</button>
+          </form>
+        </div>
+        <div class="glass card">
+          <h3 style="margin-top:0;">Your Tickets</h3>
+          <div id="tickets-list"><div class="empty-state">No tickets yet.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/layout.js"></script>
+  <script>
+    async function loadTickets() {
+      const { tickets } = await Api.get('/api/support');
+      const list = document.getElementById('tickets-list');
+      list.innerHTML = tickets.length ? tickets.map(t => `
+        <div style="padding:12px 0;border-bottom:1px solid var(--glass-border);">
+          <div style="display:flex;justify-content:space-between;"><strong>${t.subject}</strong><span class="badge ${t.status==='open'?'badge-yellow':'badge-green'}">${t.status}</span></div>
+          <div style="color:var(--text-1);font-size:13px;margin-top:6px;">${t.message}</div>
+          ${t.reply ? `<div style="color:var(--accent);font-size:13px;margin-top:8px;"><strong>Support:</strong> ${t.reply}</div>` : ''}
+        </div>`).join('') : '<div class="empty-state">No tickets yet.</div>';
+    }
+
+    document.getElementById('ticket-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const alertBox = document.getElementById('ticket-alert');
+      const form = new FormData(e.target);
+      try {
+        await Api.post('/api/support', { subject: form.get('subject'), message: form.get('message') });
+        alertBox.innerHTML = '<div class="alert alert-success">Ticket submitted.</div>';
+        e.target.reset();
+        loadTickets();
+      } catch (err) {
+        alertBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+      }
+    });
+
+    loadTickets();
+  </script>
+</body>
+</html>

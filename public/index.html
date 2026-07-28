@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Trader | Binance AI Trading Platform</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="navbar-public">
+      <div style="display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;">
+        <span class="dot-accent" style="width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);"></span>
+        AI Trader
+      </div>
+      <div style="display:flex;gap:12px;align-items:center;">
+        <a href="/login.html" class="btn btn-secondary btn-sm">Log In</a>
+        <a href="/register.html" class="btn btn-primary btn-sm">Get Started</a>
+      </div>
+    </div>
+
+    <div class="hero animate-in">
+      <div class="badge badge-yellow" style="margin-bottom:20px;">
+        <span class="dot dot-green"></span> Live on Binance Spot &amp; Futures
+      </div>
+      <h1>Trade Smarter with an<br/>AI-Powered Binance Engine</h1>
+      <p>Connect your Binance account, let the AI engine scan markets across seven timeframes using
+        confluence of trend, momentum, volume and market-structure signals, and trade with disciplined
+        risk management — or take the wheel yourself with a professional manual terminal.</p>
+      <div class="hero-actions">
+        <a href="/register.html" class="btn btn-primary">Create Free Account</a>
+        <a href="/login.html" class="btn btn-secondary">I already have an account</a>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Everything you need to trade with an edge</div>
+      <div class="section-sub">A complete cockpit for automated and manual trading, built around risk-first execution.</div>
+      <div class="feature-grid">
+        <div class="glass feature-card">
+          <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="8" width="16" height="12" rx="2"/><circle cx="9" cy="14" r="1.2" fill="currentColor"/><circle cx="15" cy="14" r="1.2" fill="currentColor"/></svg></div>
+          <h3>24/7 AI Auto-Trading</h3>
+          <p style="color:var(--text-1);">Continuously scans configured symbols across 1m-4h timeframes, combining
+            EMA/RSI/MACD/ATR/ADX/VWAP/Bollinger Bands with structure detection (BOS, CHOCH, liquidity sweeps,
+            fair value gaps, order blocks) before ever placing a trade.</p>
+        </div>
+        <div class="glass feature-card">
+          <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>
+          <h3>Configurable Confidence Threshold</h3>
+          <p style="color:var(--text-1);">Trades only fire once a transparent, rules-based confidence score clears
+            your configured threshold and the minimum risk/reward ratio you set — with full visibility into how
+            each score was built.</p>
+        </div>
+        <div class="glass feature-card">
+          <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg></div>
+          <h3>Spot &amp; Futures, Testnet or Real</h3>
+          <p style="color:var(--text-1);">Connect Spot Testnet, Spot Real, Futures Testnet, or Futures Real accounts.
+            Keys are validated instantly and encrypted at rest — secrets are never sent back to the browser.</p>
+        </div>
+        <div class="glass feature-card">
+          <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div>
+          <h3>Live Account Sync</h3>
+          <p style="color:var(--text-1);">Wallet balance, margin, unrealized/realized PNL, ROI, win rate, and open
+            positions update live over WebSocket the moment your account connects.</p>
+        </div>
+        <div class="glass feature-card">
+          <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="9" width="18" height="12" rx="1"/><path d="M12 9v12"/></svg></div>
+          <h3>Referral Program</h3>
+          <p style="color:var(--text-1);">Every account gets a unique referral code and link automatically, with a
+            full dashboard for referrals, earnings, and a public leaderboard.</p>
+        </div>
+        <div class="glass feature-card">
+          <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h11l-3-3M20 17H9l3 3"/></svg></div>
+          <h3>Full Manual Terminal</h3>
+          <p style="color:var(--text-1);">Prefer to trade yourself? Place market/limit orders with stop-loss and
+            take-profit directly from the manual trading terminal.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="glass" style="padding:36px;text-align:center;margin-bottom:60px;">
+      <h2 style="margin-top:0;">Ready to connect your Binance account?</h2>
+      <p style="color:var(--text-1);">Start on Testnet — no real funds required — then go live when you're ready.</p>
+      <a href="/register.html" class="btn btn-primary">Create Your Free Account</a>
+    </div>
+
+    <div style="text-align:center;color:var(--text-2);font-size:13px;padding-bottom:40px;">
+      Trading cryptocurrency involves substantial risk of loss. Nothing on this platform is financial advice.
+      &copy; <span id="year"></span> AI Trader. <a href="/admin-login.html" style="color:var(--text-2);text-decoration:underline;">Admin</a>
+    </div>
+  </div>
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>

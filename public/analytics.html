@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Analytics | AI Trader</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="app-shell" id="app-shell">
+    <div id="page-content">
+      <div class="animate-in" style="margin-bottom:24px;">
+        <h1 style="margin:0 0 4px;">Analytics</h1>
+        <p style="color:var(--text-1);margin:0;">Performance breakdown by symbol and by trading mode.</p>
+      </div>
+
+      <div class="grid-2 animate-in" style="margin-bottom:20px;">
+        <div class="glass card">
+          <h3 style="margin-top:0;">By Symbol</h3>
+          <div id="by-symbol"><div class="empty-state">No trade data yet.</div></div>
+        </div>
+        <div class="glass card">
+          <h3 style="margin-top:0;">Manual vs Auto</h3>
+          <div id="by-source"><div class="empty-state">No trade data yet.</div></div>
+        </div>
+      </div>
+
+      <div class="glass card animate-in">
+        <h3 style="margin-top:0;">Equity Curve (cumulative PNL)</h3>
+        <canvas id="equity-canvas" height="90"></canvas>
+      </div>
+    </div>
+  </div>
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/layout.js"></script>
+  <script>
+    function drawEquityCurve(points) {
+      const canvas = document.getElementById('equity-canvas');
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width = canvas.clientWidth;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+      if (!points.length) return;
+      const values = points.map(p => p.equity);
+      const min = Math.min(...values, 0), max = Math.max(...values, 0);
+      const range = (max - min) || 1;
+      ctx.beginPath();
+      ctx.strokeStyle = '#f0b90b';
+      ctx.lineWidth = 2;
+      points.forEach((p, i) => {
+        const x = (i / (points.length - 1 || 1)) * w;
+        const y = h - ((p.equity - min) / range) * h;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    }
+
+    async function load() {
+      const d = await Api.get('/api/analytics');
+      const bySymbol = document.getElementById('by-symbol');
+      const entries = Object.entries(d.bySymbol);
+      bySymbol.innerHTML = entries.length
+        ? `<table><thead><tr><th>Symbol</th><th>Trades</th><th>Win %</th><th>PNL</th></tr></thead><tbody>
+            ${entries.map(([sym, v]) => `<tr><td>${sym}</td><td>${v.trades}</td><td>${((v.wins/v.trades)*100).toFixed(1)}%</td><td class="${v.pnl>=0?'pos':'neg'}">$${v.pnl.toFixed(2)}</td></tr>`).join('')}
+          </tbody></table>`
+        : '<div class="empty-state">No trade data yet.</div>';
+
+      const bySource = document.getElementById('by-source');
+      const sourceEntries = Object.entries(d.bySource);
+      bySource.innerHTML = `<table><thead><tr><th>Mode</th><th>Trades</th><th>PNL</th></tr></thead><tbody>
+        ${sourceEntries.map(([mode, v]) => `<tr><td style="text-transform:capitalize;">${mode}</td><td>${v.trades}</td><td class="${v.pnl>=0?'pos':'neg'}">$${v.pnl.toFixed(2)}</td></tr>`).join('')}
+      </tbody></table>`;
+
+      drawEquityCurve(d.equityCurve);
+    }
+    load();
+  </script>
+</body>
+</html>

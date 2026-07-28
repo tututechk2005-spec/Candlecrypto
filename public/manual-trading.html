@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Manual Trading | AI Trader</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="app-shell" id="app-shell">
+    <div id="page-content">
+      <div class="animate-in" style="margin-bottom:24px;">
+        <h1 style="margin:0 0 4px;">Manual Trading</h1>
+        <p style="color:var(--text-1);margin:0;">Place orders yourself on any connected account.</p>
+      </div>
+
+      <div class="grid-2 animate-in">
+        <div class="glass card">
+          <h3 style="margin-top:0;">New Order</h3>
+          <div id="order-alert"></div>
+          <form id="order-form">
+            <div class="field">
+              <label>Account</label>
+              <select name="accountId" id="account-select" required></select>
+            </div>
+            <div class="field">
+              <label>Symbol</label>
+              <input type="text" name="symbol" placeholder="BTCUSDT" required style="text-transform:uppercase;" />
+            </div>
+            <div class="grid-2" style="gap:12px;">
+              <div class="field">
+                <label>Side</label>
+                <select name="side" required>
+                  <option value="BUY">Buy / Long</option>
+                  <option value="SELL">Sell / Short</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Order Type</label>
+                <select name="type" id="type-select" required>
+                  <option value="MARKET">Market</option>
+                  <option value="LIMIT">Limit</option>
+                </select>
+              </div>
+            </div>
+            <div class="grid-2" style="gap:12px;">
+              <div class="field">
+                <label>Quantity</label>
+                <input type="number" step="any" name="quantity" required placeholder="0.001" />
+              </div>
+              <div class="field" id="price-field" style="display:none;">
+                <label>Limit Price</label>
+                <input type="number" step="any" name="price" placeholder="0.00" />
+              </div>
+            </div>
+            <div class="grid-2" style="gap:12px;">
+              <div class="field">
+                <label>Stop Loss (optional)</label>
+                <input type="number" step="any" name="stopLoss" placeholder="0.00" />
+              </div>
+              <div class="field">
+                <label>Take Profit (optional)</label>
+                <input type="number" step="any" name="takeProfit" placeholder="0.00" />
+              </div>
+            </div>
+            <button class="btn btn-primary btn-block" type="submit" id="submit-btn">Place Order</button>
+          </form>
+        </div>
+
+        <div class="glass card">
+          <h3 style="margin-top:0;">Open Positions</h3>
+          <div id="positions-list"><div class="empty-state">No open positions.</div></div>
+        </div>
+      </div>
+
+      <div class="glass card animate-in" style="margin-top:20px;">
+        <h3 style="margin-top:0;">Recent Orders</h3>
+        <div id="orders-list"><div class="empty-state">No orders yet.</div></div>
+      </div>
+    </div>
+  </div>
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/layout.js"></script>
+  <script>
+    document.getElementById('type-select').addEventListener('change', (e) => {
+      document.getElementById('price-field').style.display = e.target.value === 'LIMIT' ? 'block' : 'none';
+    });
+
+    async function loadAccounts() {
+      const { accounts } = await Api.get('/api/binance/accounts');
+      const select = document.getElementById('account-select');
+      if (!accounts.length) {
+        select.innerHTML = '<option value="">No accounts connected</option>';
+        return;
+      }
+      select.innerHTML = accounts.map(a => `<option value="${a.id}">${a.label} (${a.account_type.replace('_',' ')})</option>`).join('');
+    }
+
+    async function loadPositions() {
+      const { positions } = await Api.get('/api/trading/positions');
+      const list = document.getElementById('positions-list');
+      if (!positions.length) { list.innerHTML = '<div class="empty-state">No open positions.</div>'; return; }
+      list.innerHTML = positions.map(p => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--glass-border);">
+          <div>
+            <strong>${p.symbol}</strong> ${p.side === 'long' ? '<span class="badge badge-green">LONG</span>' : '<span class="badge badge-red">SHORT</span>'}
+            <div style="color:var(--text-2);font-size:12px;">Entry ${p.entry_price ?? '-'} &middot; Qty ${p.quantity ?? '-'}</div>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="closePosition(${p.id})">Close</button>
+        </div>`).join('');
+    }
+
+    async function loadOrders() {
+      const { orders } = await Api.get('/api/trading/orders');
+      const list = document.getElementById('orders-list');
+      if (!orders.length) { list.innerHTML = '<div class="empty-state">No orders yet.</div>'; return; }
+      list.innerHTML = `<table><thead><tr><th>Symbol</th><th>Side</th><th>Type</th><th>Qty</th><th>Source</th><th>Status</th></tr></thead><tbody>
+        ${orders.slice(0,25).map(o => `<tr><td>${o.symbol}</td><td>${o.side}</td><td>${o.type}</td><td>${o.quantity}</td><td><span class="badge ${o.source==='auto'?'badge-blue':'badge-yellow'}">${o.source}</span></td><td>${o.status}</td></tr>`).join('')}
+      </tbody></table>`;
+    }
+
+    async function closePosition(id) {
+      if (!confirm('Close this position at market price?')) return;
+      try { await Api.post(`/api/trading/manual/close/${id}`); loadPositions(); } catch (e) { alert(e.message); }
+    }
+
+    document.getElementById('order-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const alertBox = document.getElementById('order-alert');
+      alertBox.innerHTML = '';
+      const btn = document.getElementById('submit-btn');
+      const form = new FormData(e.target);
+      const accountId = form.get('accountId');
+      if (!accountId) { alertBox.innerHTML = '<div class="alert alert-error">Connect a Binance account first.</div>'; return; }
+      btn.disabled = true; btn.textContent = 'Placing order...';
+      try {
+        await Api.post('/api/trading/manual/order', {
+          accountId,
+          symbol: form.get('symbol').toUpperCase(),
+          side: form.get('side'),
+          type: form.get('type'),
+          quantity: form.get('quantity'),
+          price: form.get('price') || undefined,
+          stopLoss: form.get('stopLoss') || undefined,
+          takeProfit: form.get('takeProfit') || undefined,
+        });
+        alertBox.innerHTML = '<div class="alert alert-success">Order placed successfully.</div>';
+        e.target.reset();
+        loadPositions(); loadOrders();
+      } catch (err) {
+        alertBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+      } finally {
+        btn.disabled = false; btn.textContent = 'Place Order';
+      }
+    });
+
+    loadAccounts(); loadPositions(); loadOrders();
+    setInterval(() => { loadPositions(); loadOrders(); }, 15000);
+  </script>
+</body>
+</html>

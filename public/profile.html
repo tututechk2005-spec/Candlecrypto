@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Profile | AI Trader</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="app-shell" id="app-shell">
+    <div id="page-content">
+      <div class="animate-in" style="margin-bottom:24px;">
+        <h1 style="margin:0 0 4px;">Profile</h1>
+        <p style="color:var(--text-1);margin:0;">Your account details.</p>
+      </div>
+      <div class="glass card animate-in" style="max-width:520px;">
+        <div id="profile-alert"></div>
+        <form id="profile-form">
+          <div class="field"><label>Full Name</label><input type="text" name="name" id="name-input" required /></div>
+          <div class="field"><label>Email</label><input type="email" id="email-input" disabled /></div>
+          <div class="field"><label>Referral Code</label><input type="text" id="ref-input" disabled /></div>
+          <div class="field"><label>Member Since</label><input type="text" id="joined-input" disabled /></div>
+          <button class="btn btn-primary btn-block" type="submit">Save Changes</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/layout.js"></script>
+  <script>
+    async function load() {
+      const { user } = await Api.get('/api/profile');
+      document.getElementById('name-input').value = user.name;
+      document.getElementById('email-input').value = user.email;
+      document.getElementById('ref-input').value = user.referral_code;
+      document.getElementById('joined-input').value = new Date(user.created_at*1000).toLocaleDateString();
+    }
+
+    document.getElementById('profile-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const alertBox = document.getElementById('profile-alert');
+      try {
+        await Api.put('/api/profile', { name: document.getElementById('name-input').value });
+        alertBox.innerHTML = '<div class="alert alert-success">Profile updated.</div>';
+      } catch (err) {
+        alertBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+      }
+    });
+
+    load();
+  </script>
+</body>
+</html>

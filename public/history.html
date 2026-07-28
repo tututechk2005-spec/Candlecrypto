@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Trade History | AI Trader</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="app-shell" id="app-shell">
+    <div id="page-content">
+      <div class="animate-in" style="margin-bottom:24px;">
+        <h1 style="margin:0 0 4px;">Trade History</h1>
+        <p style="color:var(--text-1);margin:0;">Every closed trade, manual or automated.</p>
+      </div>
+      <div class="glass card animate-in">
+        <div id="history-table"><div class="empty-state">No trades yet.</div></div>
+        <div style="display:flex;justify-content:center;gap:10px;margin-top:16px;">
+          <button class="btn btn-secondary btn-sm" id="prev-btn">Previous</button>
+          <span id="page-label" style="color:var(--text-1);align-self:center;font-size:13px;"></span>
+          <button class="btn btn-secondary btn-sm" id="next-btn">Next</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/layout.js"></script>
+  <script>
+    let page = 1;
+    async function load() {
+      const d = await Api.get(`/api/history?page=${page}`);
+      const table = document.getElementById('history-table');
+      table.innerHTML = d.trades.length
+        ? `<table><thead><tr><th>Closed</th><th>Symbol</th><th>Side</th><th>Entry</th><th>Exit</th><th>Qty</th><th>PNL</th><th>Result</th><th>Source</th></tr></thead><tbody>
+            ${d.trades.map(t => `<tr>
+              <td>${new Date(t.closed_at*1000).toLocaleString()}</td>
+              <td>${t.symbol}</td>
+              <td>${t.side === 'long' ? 'LONG' : 'SHORT'}</td>
+              <td>${t.entry_price}</td>
+              <td>${t.exit_price}</td>
+              <td>${t.quantity}</td>
+              <td class="${t.pnl>=0?'pos':'neg'}">$${Number(t.pnl).toFixed(2)}</td>
+              <td><span class="badge ${t.result==='win'?'badge-green':'badge-red'}">${t.result}</span></td>
+              <td><span class="badge ${t.source==='auto'?'badge-blue':'badge-yellow'}">${t.source}</span></td>
+            </tr>`).join('')}
+          </tbody></table>`
+        : '<div class="empty-state">No trades yet.</div>';
+      document.getElementById('page-label').textContent = `Page ${d.page} of ${Math.max(1, Math.ceil(d.total / d.pageSize))}`;
+    }
+    document.getElementById('prev-btn').addEventListener('click', () => { if (page > 1) { page--; load(); } });
+    document.getElementById('next-btn').addEventListener('click', () => { page++; load(); });
+    load();
+  </script>
+</body>
+</html>

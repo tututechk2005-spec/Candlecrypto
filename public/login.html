@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Log In | AI Trader</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="auth-wrap">
+    <div class="glass auth-card animate-in">
+      <h2>Welcome back</h2>
+      <div class="sub">Log in to your AI Trader account</div>
+      <div id="alert-box"></div>
+      <form id="login-form">
+        <div class="field">
+          <label>Email</label>
+          <input type="email" name="email" required placeholder="you@example.com" />
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" name="password" required placeholder="••••••••" />
+        </div>
+        <div style="text-align:right;margin-bottom:20px;">
+          <a href="/forgot-password.html" style="font-size:13px;color:var(--text-1);">Forgot password?</a>
+        </div>
+        <button class="btn btn-primary btn-block" type="submit" id="submit-btn">Log In</button>
+      </form>
+      <div class="auth-footer">Don't have an account? <a href="/register.html" style="color:var(--accent);">Sign up</a></div>
+    </div>
+  </div>
+  <script src="/js/api.js"></script>
+  <script>
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submit-btn');
+      const alertBox = document.getElementById('alert-box');
+      alertBox.innerHTML = '';
+      btn.disabled = true; btn.textContent = 'Logging in...';
+      const form = new FormData(e.target);
+      try {
+        const data = await Api.post('/api/auth/login', { email: form.get('email'), password: form.get('password') });
+        localStorage.setItem('token', data.token);
+        window.location.href = '/dashboard.html';
+      } catch (err) {
+        alertBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+        btn.disabled = false; btn.textContent = 'Log In';
+      }
+    });
+  </script>
+</body>
+</html>

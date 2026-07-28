@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Auto Trading | AI Trader</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="app-shell" id="app-shell">
+    <div id="page-content">
+      <div class="animate-in" style="margin-bottom:24px;">
+        <h1 style="margin:0 0 4px;">Auto Trading</h1>
+        <p style="color:var(--text-1);margin:0;">The AI engine scans continuously and only executes when your configured thresholds are met.</p>
+      </div>
+
+      <div class="glass card animate-in" style="margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+          <div>
+            <div class="stat-label">Minimum Confidence Required</div>
+            <div class="stat-value" id="min-confidence">95%</div>
+          </div>
+          <div>
+            <div class="stat-label">Minimum Risk : Reward</div>
+            <div class="stat-value" id="min-rr">1:2</div>
+          </div>
+          <div>
+            <div class="stat-label">Scan Interval</div>
+            <div class="stat-value" id="scan-interval">15s</div>
+          </div>
+          <a href="/settings.html" class="btn btn-secondary btn-sm">Adjust in Settings</a>
+        </div>
+      </div>
+
+      <div class="glass card animate-in" style="margin-bottom:20px;">
+        <h3 style="margin-top:0;">Your Connected Accounts</h3>
+        <div id="accounts-list"><div class="empty-state">No accounts connected yet. Connect one in Settings.</div></div>
+      </div>
+
+      <div class="glass card animate-in">
+        <h3 style="margin-top:0;">Qualifying Signals (auto-execution candidates)</h3>
+        <div id="signals-table"><div class="empty-state">Waiting for the next scan cycle...</div></div>
+      </div>
+    </div>
+  </div>
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/layout.js"></script>
+  <script>
+    async function loadSettings() {
+      const { aiSettings } = await Api.get('/api/settings');
+      if (aiSettings) {
+        document.getElementById('min-confidence').textContent = `${aiSettings.min_confidence}%`;
+        document.getElementById('min-rr').textContent = `1:${aiSettings.min_risk_reward}`;
+        document.getElementById('scan-interval').textContent = `${Math.round(aiSettings.scan_interval_ms/1000)}s`;
+      }
+    }
+
+    async function loadAccounts() {
+      const { accounts } = await Api.get('/api/binance/accounts');
+      const list = document.getElementById('accounts-list');
+      if (!accounts.length) return;
+      list.innerHTML = accounts.map(a => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--glass-border);">
+          <div>
+            <strong>${a.label}</strong>
+            <div style="color:var(--text-2);font-size:12px;">${a.account_type.replace('_',' ')} &middot; ${a.api_key_masked}</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span class="badge ${a.is_verified ? 'badge-green' : 'badge-red'}">${a.is_verified ? 'Verified' : 'Unverified'}</span>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-1);">
+              <input type="checkbox" ${a.is_active ? 'checked' : ''} onchange="toggleAuto(${a.id}, this.checked)" /> Auto-trade
+            </label>
+          </div>
+        </div>`).join('');
+    }
+
+    async function toggleAuto(accountId, enabled) {
+      try { await Api.post('/api/trading/auto/toggle', { accountId, enabled }); } catch (e) { alert(e.message); }
+    }
+
+    async function loadSignals() {
+      const { signals } = await Api.get('/api/signals');
+      const qualifying = signals.filter(s => s.confidence >= 0);
+      const table = document.getElementById('signals-table');
+      if (!signals.length) { table.innerHTML = '<div class="empty-state">Waiting for the next scan cycle...</div>'; return; }
+      table.innerHTML = `<table><thead><tr><th>Symbol</th><th>Direction</th><th>Confidence</th><th>Trend</th><th>Volume</th><th>Momentum</th><th>R:R</th><th>Status</th></tr></thead><tbody>
+        ${signals.slice(0,25).map(s => `<tr>
+          <td>${s.symbol}</td>
+          <td>${s.direction === 'long' ? '<span class="badge badge-green">LONG</span>' : '<span class="badge badge-red">SHORT</span>'}</td>
+          <td>${s.confidence}%</td>
+          <td>${s.trend_confirmed ? '✅' : '—'}</td>
+          <td>${s.volume_confirmed ? '✅' : '—'}</td>
+          <td>${s.momentum_confirmed ? '✅' : '—'}</td>
+          <td>1:${(s.risk_reward||0).toFixed(2)}</td>
+          <td><span class="badge badge-blue">${s.status}</span></td>
+        </tr>`).join('')}
+      </tbody></table>`;
+    }
+
+    loadSettings(); loadAccounts(); loadSignals();
+    setInterval(loadSignals, 10000);
+  </script>
+</body>
+</html>

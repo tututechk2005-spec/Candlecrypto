@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Notifications | AI Trader</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="app-shell" id="app-shell">
+    <div id="page-content">
+      <div class="animate-in" style="margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <h1 style="margin:0 0 4px;">Notifications</h1>
+          <p style="color:var(--text-1);margin:0;">Trade alerts, system updates, and admin broadcasts.</p>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="markAll()">Mark all read</button>
+      </div>
+      <div class="glass card animate-in">
+        <div id="notif-list"><div class="empty-state">No notifications yet.</div></div>
+      </div>
+    </div>
+  </div>
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/layout.js"></script>
+  <script>
+    async function load() {
+      const { notifications } = await Api.get('/api/notifications');
+      const list = document.getElementById('notif-list');
+      list.innerHTML = notifications.length ? notifications.map(n => `
+        <div style="display:flex;justify-content:space-between;align-items:start;padding:14px 0;border-bottom:1px solid var(--glass-border);${n.is_read ? 'opacity:.6;' : ''}">
+          <div>
+            <strong>${n.title}</strong>
+            <div style="color:var(--text-1);font-size:13px;margin-top:4px;">${n.message}</div>
+            <div style="color:var(--text-2);font-size:11px;margin-top:6px;">${new Date(n.created_at*1000).toLocaleString()}</div>
+          </div>
+          <span class="badge badge-blue">${n.type}</span>
+        </div>`).join('') : '<div class="empty-state">No notifications yet.</div>';
+    }
+    async function markAll() { await Api.post('/api/notifications/read-all'); load(); }
+    load();
+    setInterval(load, 15000);
+  </script>
+</body>
+</html>

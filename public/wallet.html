@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Wallet | AI Trader</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="app-shell" id="app-shell">
+    <div id="page-content">
+      <div class="animate-in" style="margin-bottom:24px;">
+        <h1 style="margin:0 0 4px;">Wallet</h1>
+        <p style="color:var(--text-1);margin:0;">Balances across every connected Binance account.</p>
+      </div>
+
+      <div id="wallet-accounts" class="animate-in" style="margin-bottom:20px;"><div class="glass card"><div class="empty-state">Loading balances...</div></div></div>
+
+      <div class="grid-2 animate-in">
+        <div class="glass card">
+          <h3 style="margin-top:0;">Request Deposit Record</h3>
+          <p style="color:var(--text-2);font-size:13px;">This logs an internal deposit record for bookkeeping. Actual funds must be deposited directly on Binance.</p>
+          <form id="deposit-form">
+            <div class="field"><label>Amount (USDT)</label><input type="number" step="any" name="amount" required /></div>
+            <div class="field"><label>Method</label><input type="text" name="method" placeholder="e.g. Bank Transfer" /></div>
+            <button class="btn btn-primary btn-block" type="submit">Log Deposit</button>
+          </form>
+        </div>
+        <div class="glass card">
+          <h3 style="margin-top:0;">Request Withdrawal</h3>
+          <p style="color:var(--text-2);font-size:13px;">Submits a withdrawal request for admin review.</p>
+          <form id="withdraw-form">
+            <div class="field"><label>Amount (USDT)</label><input type="number" step="any" name="amount" required /></div>
+            <div class="field"><label>Destination</label><input type="text" name="destination" placeholder="Wallet address / bank details" /></div>
+            <button class="btn btn-secondary btn-block" type="submit">Request Withdrawal</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/layout.js"></script>
+  <script>
+    async function loadWallet() {
+      const d = await Api.get('/api/wallet');
+      const container = document.getElementById('wallet-accounts');
+      if (!d.accounts.length) {
+        container.innerHTML = '<div class="glass card"><div class="empty-state">No Binance accounts connected yet. Connect one in Settings.</div></div>';
+        return;
+      }
+      container.innerHTML = d.accounts.map(a => {
+        if (a.error) return `<div class="glass card" style="margin-bottom:14px;"><strong>${a.label}</strong> <span class="badge badge-red">Error: ${a.error}</span></div>`;
+        if (a.type.startsWith('futures')) {
+          return `<div class="glass card" style="margin-bottom:14px;">
+            <strong>${a.label}</strong> <span class="badge badge-blue">${a.type.replace('_',' ')}</span>
+            <div class="stat-grid" style="margin-top:14px;">
+              <div><div class="stat-label">Wallet Balance</div><div class="stat-value">$${a.walletBalance.toFixed(2)}</div></div>
+              <div><div class="stat-label">Available</div><div class="stat-value">$${a.availableBalance.toFixed(2)}</div></div>
+              <div><div class="stat-label">Margin Balance</div><div class="stat-value">$${a.marginBalance.toFixed(2)}</div></div>
+              <div><div class="stat-label">Unrealized PNL</div><div class="stat-value ${a.unrealizedPnl>=0?'pos':'neg'}">$${a.unrealizedPnl.toFixed(2)}</div></div>
+            </div>
+          </div>`;
+        }
+        return `<div class="glass card" style="margin-bottom:14px;">
+          <strong>${a.label}</strong> <span class="badge badge-blue">${a.type.replace('_',' ')}</span>
+          <div style="margin-top:14px;">
+            ${a.balances.length ? `<table><thead><tr><th>Asset</th><th>Free</th><th>Locked</th></tr></thead><tbody>
+              ${a.balances.map(b => `<tr><td>${b.asset}</td><td>${b.free}</td><td>${b.locked}</td></tr>`).join('')}
+            </tbody></table>` : '<div class="empty-state">No balances.</div>'}
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    document.getElementById('deposit-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = new FormData(e.target);
+      try {
+        await Api.post('/api/wallet/deposit', { amount: form.get('amount'), method: form.get('method') });
+        alert('Deposit logged.'); e.target.reset();
+      } catch (err) { alert(err.message); }
+    });
+
+    document.getElementById('withdraw-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = new FormData(e.target);
+      try {
+        await Api.post('/api/wallet/withdraw', { amount: form.get('amount'), destination: form.get('destination') });
+        alert('Withdrawal requested.'); e.target.reset();
+      } catch (err) { alert(err.message); }
+    });
+
+    loadWallet();
+  </script>
+</body>
+</html>
